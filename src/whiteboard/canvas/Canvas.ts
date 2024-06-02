@@ -1,28 +1,29 @@
-import { CanvasObject } from "../objects/Object";
-
-export interface Viewport {
-  top: number;
-  left: number;
-  width: number;
-  height: number;
+export interface CanvasDefinition<D, T> {
+  clear(): void;
+  setObjects(objects: D): void;
+  render(): void;
+  addEventListener<E extends EventName<T>>(event: E, callback: EventCallback<T, E>): void;
+  removeEventListener<E extends EventName<T>>(event: E, callback: EventCallback<T, E>): void;
+  destroy(): void;
 }
 
-export class Canvas {
-  private canvasElement: HTMLCanvasElement;
-  private objects: Map<string, CanvasObject>;
-  private dpr: number;
-  private ctx: CanvasRenderingContext2D;
+type EventName<T> = keyof T;
+type EventCallback<T, E extends EventName<T>> = T[E] extends (...args: any) => any ? T[E] : never;
+
+export class Canvas<D = [], T = {}> implements CanvasDefinition<D, T> {
+  protected canvasElement: HTMLCanvasElement;
+  protected data: D;
+  protected dpr: number;
+  protected ctx: CanvasRenderingContext2D;
+
+  protected eventListeners: Map<EventName<T>, Array<EventCallback<T, any>>> = new Map();
 
   constructor(
-    {
-      element,
-      width,
-      height,
-    }: { element: HTMLCanvasElement; width: number; height: number },
-    objects: Map<string, CanvasObject>,
+    { element, width, height }: { element: HTMLCanvasElement; width: number; height: number },
+    objects: D,
   ) {
     this.canvasElement = element;
-    this.objects = objects;
+    this.data = objects;
 
     this.dpr = window.devicePixelRatio ?? 1;
     this.canvasElement.setAttribute("width", (width * this.dpr).toString());
@@ -47,16 +48,37 @@ export class Canvas {
     ctx.restore();
   }
 
-  public setObjects(objects: Map<string, CanvasObject>): void {
-    this.objects = objects;
+  public setObjects(data: D): void {
+    this.data = data;
   }
 
   public render() {
-    const ctx = this.ctx;
-    this.clear();
-    const objects = Array.from(this.objects.values());
-    for (const object of objects) {
-      object.render(ctx);
-    }
+    throw new Error("Render method not implemented.");
+  }
+
+  // Event handling methods
+  public addEventListener<E extends EventName<T>>(event: E, callback: EventCallback<T, E>): void {
+    const listeners = this.eventListeners.get(event) || [];
+    this.eventListeners.set(event, [...listeners, callback] as Array<EventCallback<T, E>>);
+  }
+
+  public removeEventListener<E extends EventName<T>>(
+    event: E,
+    callback: EventCallback<T, E>,
+  ): void {
+    const listeners = this.eventListeners.get(event) || [];
+    const updatedListeners = listeners.filter((cb) => cb !== callback);
+    this.eventListeners.set(event, updatedListeners as Array<EventCallback<T, E>>);
+  }
+
+  protected emit<E extends EventName<T>>(event: E, ...args: Parameters<EventCallback<T, E>>): void {
+    const listeners = this.eventListeners.get(event);
+    if (!listeners) return;
+
+    listeners.forEach((callback) => callback(...args));
+  }
+
+  public destroy(): void {
+    this.eventListeners.clear();
   }
 }

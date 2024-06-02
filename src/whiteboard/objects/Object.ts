@@ -10,6 +10,7 @@ export interface ObjectData {
   left: number;
   width: number;
   height: number;
+  color: string;
 }
 
 export interface CanvasObject extends ObjectData {
@@ -20,6 +21,7 @@ export interface CanvasObject extends ObjectData {
   left: number;
   width: number;
   height: number;
+  color: string;
 
   setSize: (width: number, height: number) => void;
   setPosition: (top: number, left: number) => void;

@@ -7,6 +7,7 @@ export class Rectangle implements CanvasObject {
   left: number;
   width: number;
   height: number;
+  color: string;
 
   constructor(data: ObjectData) {
     this.id = data.id;
@@ -14,6 +15,7 @@ export class Rectangle implements CanvasObject {
     this.left = data.left;
     this.width = data.width;
     this.height = data.height;
+    this.color = data.color;
   }
 
   setSize(width: number, height: number): void {
@@ -28,7 +30,7 @@ export class Rectangle implements CanvasObject {
 
   render(ctx: CanvasRenderingContext2D): void {
     ctx.save();
-    ctx.fillStyle = "#3cffba";
+    ctx.fillStyle = this.color;
     ctx.beginPath();
     ctx.roundRect(this.left, this.top, this.width, this.height, 10);
     ctx.fill();
