@@ -1,7 +1,8 @@
 import "./App.css";
+import Whiteboard from "./whiteboard/Whiteboard";
 
 function App() {
-  return <></>;
+  return <Whiteboard />;
 }
 
 export default App;
