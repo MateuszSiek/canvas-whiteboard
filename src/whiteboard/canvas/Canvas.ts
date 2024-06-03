@@ -1,27 +1,33 @@
-export interface CanvasDefinition<D, T> {
+import { ObjectData, render, renderer } from "../objects/Object";
+
+export interface CanvasDefinition<T> {
   clear(): void;
-  setObjects(objects: D): void;
+  setObjects(objects: Map<number, ObjectData>): void;
   render(): void;
   addEventListener<E extends EventName<T>>(event: E, callback: EventCallback<T, E>): void;
   removeEventListener<E extends EventName<T>>(event: E, callback: EventCallback<T, E>): void;
   destroy(): void;
 }
 
+export interface CanvasConstructorParameters {
+  element: HTMLCanvasElement;
+  width: number;
+  height: number;
+  objects: Map<number, ObjectData>;
+}
+
 type EventName<T> = keyof T;
 type EventCallback<T, E extends EventName<T>> = T[E] extends (...args: any) => any ? T[E] : never;
 
-export class Canvas<D = [], T = {}> implements CanvasDefinition<D, T> {
+export class Canvas<T = {}> implements CanvasDefinition<T> {
   protected canvasElement: HTMLCanvasElement;
-  protected data: D;
+  protected data: Map<number, ObjectData>;
   protected dpr: number;
   protected ctx: CanvasRenderingContext2D;
 
   protected eventListeners: Map<EventName<T>, Array<EventCallback<T, any>>> = new Map();
 
-  constructor(
-    { element, width, height }: { element: HTMLCanvasElement; width: number; height: number },
-    objects: D,
-  ) {
+  constructor({ element, width, height, objects }: CanvasConstructorParameters) {
     this.canvasElement = element;
     this.data = objects;
 
@@ -48,12 +54,17 @@ export class Canvas<D = [], T = {}> implements CanvasDefinition<D, T> {
     ctx.restore();
   }
 
-  public setObjects(data: D): void {
+  public setObjects(data: Map<number, ObjectData>): void {
     this.data = data;
   }
 
   public render() {
-    throw new Error("Render method not implemented.");
+    const ctx = this.ctx;
+    this.clear();
+    const objects = Array.from(this.data.values());
+    for (const object of objects) {
+      render(object, ctx);
+    }
   }
 
   // Event handling methods

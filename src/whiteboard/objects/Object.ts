@@ -1,5 +1,11 @@
+import { Rectangle } from "./Rectangle";
+import { ResizeAnchor } from "./ResizeAnchor";
+import { ResizeAnchorBox } from "./ResizeAnchorBox";
+
 export enum ObjectType {
   rectangle = "rectangle",
+  resizeAnchor = "resizeAnchor",
+  resizeAnchorBox = "resizeAnchorBox",
 }
 
 export interface ObjectData {
@@ -10,23 +16,35 @@ export interface ObjectData {
   left: number;
   width: number;
   height: number;
-  color: string;
+  color?: string;
 }
 
-export interface CanvasObject extends ObjectData {
-  id: number;
-  type: ObjectType;
+export enum RendererType {
+  default = "default",
+  selectable = "selectable",
+}
 
-  top: number;
-  left: number;
-  width: number;
-  height: number;
-  color: string;
+export interface ShapeRenderer {
+  renderDefault(object: ObjectData, ctx: CanvasRenderingContext2D): void;
+  renderSelect?(object: ObjectData, ctx: CanvasRenderingContext2D): void;
+}
 
-  setSize: (width: number, height: number) => void;
-  setPosition: (top: number, left: number) => void;
+const objectRenderers: { [key in ObjectType]: ShapeRenderer } = {
+  [ObjectType.rectangle]: Rectangle,
+  [ObjectType.resizeAnchor]: ResizeAnchor,
+  [ObjectType.resizeAnchorBox]: ResizeAnchorBox,
+};
 
-  render(ctx: CanvasRenderingContext2D): void;
+export function render(
+  object: ObjectData,
+  ctx: CanvasRenderingContext2D,
+  rendererType: RendererType = RendererType.default,
+): void {
+  const renderer = objectRenderers[object.type];
 
-  renderSelectable(ctx: CanvasRenderingContext2D): void;
+  if (rendererType === RendererType.selectable && renderer.renderSelect) {
+    renderer.renderSelect(object, ctx);
+  } else if (rendererType === RendererType.default) {
+    renderer.renderDefault(object, ctx);
+  }
 }
