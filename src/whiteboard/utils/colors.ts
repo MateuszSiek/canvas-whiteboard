@@ -7,3 +7,12 @@ export function generateColorFromId(id: number): string {
   const hexColor = (id % 0xffffff).toString(16);
   return `#${hexColor.padStart(6, "0")}`;
 }
+
+export function getCanvasPixelColor(
+  ctx: CanvasRenderingContext2D,
+  { x, y }: { x: number; y: number },
+): string {
+  const p = ctx.getImageData(x, y, 1, 1).data;
+  const color = rgbToHex(p[0], p[1], p[2]);
+  return color;
+}

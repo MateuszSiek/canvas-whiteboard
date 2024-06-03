@@ -72,20 +72,20 @@ export function getSelectionAnchors(objects: ObjectData[]): ObjectData[] | undef
 }
 
 export function scaleObject(
-  wrapperBox: ObjectData,
-  initialBox: ObjectData,
-  object: ObjectData,
+  targetObject: ObjectData,
+  sourceObject: ObjectData,
+  objectToScale: ObjectData,
 ): ObjectData {
-  const scaleX = wrapperBox.width / initialBox.width;
-  const scaleY = wrapperBox.height / initialBox.height;
+  const scaleX = targetObject.width / sourceObject.width;
+  const scaleY = targetObject.height / sourceObject.height;
 
-  const newLeft = wrapperBox.left + (object.left - initialBox.left) * scaleX;
-  const newTop = wrapperBox.top + (object.top - initialBox.top) * scaleY;
-  const newWidth = object.width * scaleX;
-  const newHeight = object.height * scaleY;
+  const newLeft = targetObject.left + (objectToScale.left - sourceObject.left) * scaleX;
+  const newTop = targetObject.top + (objectToScale.top - sourceObject.top) * scaleY;
+  const newWidth = objectToScale.width * scaleX;
+  const newHeight = objectToScale.height * scaleY;
 
   return {
-    ...object,
+    ...objectToScale,
     left: newLeft,
     top: newTop,
     width: newWidth,

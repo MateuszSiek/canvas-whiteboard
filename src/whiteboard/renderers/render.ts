@@ -1,17 +1,8 @@
 import { ObjectData, ObjectType } from "../types/objects";
+import { RendererType, ShapeRenderer } from "../types/render";
 import { Rectangle } from "./Rectangle";
 import { ResizeAnchor } from "./ResizeAnchor";
 import { ResizeAnchorBox } from "./ResizeAnchorBox";
-
-export enum RendererType {
-  default = "default",
-  selectable = "selectable",
-}
-
-export interface ShapeRenderer {
-  renderDefault(object: ObjectData, ctx: CanvasRenderingContext2D): void;
-  renderSelect?(object: ObjectData, ctx: CanvasRenderingContext2D): void;
-}
 
 const objectRenderers: { [key in ObjectType]: ShapeRenderer } = {
   [ObjectType.rectangle]: Rectangle,

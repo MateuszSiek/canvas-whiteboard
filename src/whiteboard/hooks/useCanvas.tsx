@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { MainCanvas } from "../canvas/MainCanvas";
-import { ObjectData } from "../renderers/Object";
+import { ObjectData } from "../types/objects";
 
 export function useCanvas({
   objectsRef,

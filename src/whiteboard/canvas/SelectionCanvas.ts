@@ -1,10 +1,10 @@
 import { Canvas, CanvasConstructorParameters } from "./Canvas";
-import { generateColorFromId } from "../utils/colors";
+import { generateColorFromId, getCanvasPixelColor } from "../utils/colors";
 import { getDiffMousePos, getMousePos } from "../utils/mouse";
 import { ObjectData } from "../types/objects";
-import { RendererType, render } from "../renderers/render";
-import { getPixelColor } from "../utils/canvas";
+import { render } from "../renderers/render";
 import { MouseDiffPosition, MousePosition } from "../types/mouse";
+import { RendererType } from "../types/render";
 
 export enum SelectionEventType {
   objectsSelect = "objectsSelect",
@@ -83,7 +83,7 @@ export class SelectionCanvas extends Canvas<SelectCanvasEventMap> {
 
     this.initialMousePos = getMousePos(this.canvasElement, e);
 
-    const color = getPixelColor(this.ctx, this.initialMousePos);
+    const color = getCanvasPixelColor(this.ctx, this.initialMousePos);
     const id = this.colorToId?.get(color);
     const clickedUiObject = id !== undefined ? this.uiObjects.get(id) : undefined;
 

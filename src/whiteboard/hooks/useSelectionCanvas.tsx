@@ -103,31 +103,41 @@ export function useSelectionCanvas({
   }, [selectionCanvasRef]);
 
   useEffect(() => {
-    if (isDragging && mouseDragPos) {
-      const { dx, dy } = mouseDragPos;
-      if (selectedAnchor && selectionBox) {
-        const scaledSelectionBox = dragScaleObject(mouseDragPos, selectedAnchor, selectionBox);
-        const updatedAnchors = getSelectionAnchors([scaledSelectionBox]);
+    if (!isDragging || !mouseDragPos) return;
 
-        updateAnchorMap(uiObjectsRef.current!, updatedAnchors);
+    const { dx, dy } = mouseDragPos;
+    const updateRefObjects = (
+      ref: React.MutableRefObject<Map<number, ObjectData>>,
+      objects: ObjectData[],
+      updateFunc: (object: ObjectData) => ObjectData,
+    ) => {
+      objects.forEach((object) => {
+        const newObject = updateFunc(object);
+        ref.current.set(newObject.id, newObject);
+      });
+    };
 
-        selectedObjects.forEach((object) => {
-          const newObject = scaleObject(scaledSelectionBox, selectionBox, object);
-          renderObjectsRef.current.set(object.id, newObject);
-        });
-      } else {
-        selectedObjects.forEach((object) => {
-          const newObject = { ...object, top: object.top + dy, left: object.left + dx };
-          renderObjectsRef.current.set(object.id, newObject);
-        });
-        dragableUiObjects.forEach((object) => {
-          const newObject = { ...object, top: object.top + dy, left: object.left + dx };
-          uiObjectsRef.current.set(object.id, newObject);
-        });
-      }
-      mainCanvas.current?.render();
-      uiCanvas.current?.render();
+    if (selectedAnchor && selectionBox) {
+      const scaledSelectionBox = dragScaleObject(mouseDragPos, selectedAnchor, selectionBox);
+      const updatedAnchors = getSelectionAnchors([scaledSelectionBox]);
+
+      updateAnchorMap(uiObjectsRef.current!, updatedAnchors);
+
+      updateRefObjects(renderObjectsRef, selectedObjects, (object) =>
+        scaleObject(scaledSelectionBox, selectionBox, object),
+      );
+    } else {
+      const translateObject = (object: ObjectData) => ({
+        ...object,
+        top: object.top + dy,
+        left: object.left + dx,
+      });
+      updateRefObjects(renderObjectsRef, selectedObjects, translateObject);
+
+      updateRefObjects(uiObjectsRef, dragableUiObjects, translateObject);
     }
+    mainCanvas.current?.render();
+    uiCanvas.current?.render();
   }, [isDragging, mouseDragPos, selectedObjects, selectedAnchor]);
 
   return [selectionCanvasRef];

@@ -1,5 +1,5 @@
 import { ObjectData } from "../types/objects";
-import { ShapeRenderer } from "./render";
+import { ShapeRenderer } from "../types/render";
 
 export const Rectangle: ShapeRenderer = {
   renderDefault(object: ObjectData, ctx: CanvasRenderingContext2D): void {
