@@ -25,7 +25,10 @@ export function useSelectionCanvas({
   canvasSize,
   mainCanvas,
   uiCanvas,
-}: SelectionCanvasHook): [React.RefObject<HTMLCanvasElement>] {
+}: SelectionCanvasHook): [
+  React.RefObject<HTMLCanvasElement>,
+  React.RefObject<SelectionCanvas | undefined>,
+] {
   const selectionCanvasRef = useRef<HTMLCanvasElement>(null);
   const selectionCanvas = useRef<SelectionCanvas>();
 
@@ -140,5 +143,5 @@ export function useSelectionCanvas({
     uiCanvas.current?.render();
   }, [isDragging, mouseDragPos, selectedObjects, selectedAnchor]);
 
-  return [selectionCanvasRef];
+  return [selectionCanvasRef, selectionCanvas];
 }

@@ -1,0 +1,50 @@
+.canvases-wrapper {
+  position: relative;
+}
+
+.main-canvas {
+  pointer-events: none;
+}
+
+.selection-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  opacity: 0;
+}
+
+.ui-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.debug-view canvas {
+  position: relative;
+  opacity: 1;
+  border: solid 1px red;
+  box-sizing: border-box;
+}
+
+.controll-ui {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: center;
+  padding: 10px;
+  z-index: 10;
+}
+
+.controll-ui-inner-wrapper {
+  display: flex;
+  gap: 12px;
+  background: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  box-shadow: 0px 0px 3px 0px #00000069;
+}
