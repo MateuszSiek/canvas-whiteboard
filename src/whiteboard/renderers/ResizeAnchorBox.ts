@@ -1,4 +1,5 @@
-import { ObjectData, ShapeRenderer } from "./Object";
+import { ObjectData } from "../types/objects";
+import { ShapeRenderer } from "./render";
 
 export const ResizeAnchorBox: ShapeRenderer = {
   renderDefault(object: ObjectData, ctx: CanvasRenderingContext2D): void {

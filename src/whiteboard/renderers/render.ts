@@ -1,23 +1,7 @@
+import { ObjectData, ObjectType } from "../types/objects";
 import { Rectangle } from "./Rectangle";
 import { ResizeAnchor } from "./ResizeAnchor";
 import { ResizeAnchorBox } from "./ResizeAnchorBox";
-
-export enum ObjectType {
-  rectangle = "rectangle",
-  resizeAnchor = "resizeAnchor",
-  resizeAnchorBox = "resizeAnchorBox",
-}
-
-export interface ObjectData {
-  id: number;
-  type: ObjectType;
-
-  top: number;
-  left: number;
-  width: number;
-  height: number;
-  color?: string;
-}
 
 export enum RendererType {
   default = "default",
