@@ -2,7 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import { ObjectData, ObjectType } from "./objects/Object";
 import { MouseDragData, SelectionCanvas } from "./canvas/SelectionCanvas";
 import { MainCanvas } from "./canvas/MainCanvas";
-import { getSelectionAnchors, initializeCanvasObjects, updateAnchorMap } from "./utils";
+import {
+  AnchorIds,
+  dragScaleObject,
+  getSelectionAnchors,
+  initializeCanvasObjects,
+  scaleObject,
+  updateAnchorMap,
+} from "./utils";
 
 const canvasObjects: ObjectData[] = [
   {
@@ -49,7 +56,10 @@ function WhiteboardCanvas() {
 
   const canvasSize = { width: 500, height: 500 };
 
-  const [draggableObjects, setDraggableObjects] = useState<ObjectData[]>([]);
+  const [selectedObjects, setSelectedObjects] = useState<ObjectData[]>([]);
+  const [selectionBox, setSelectionBox] = useState<ObjectData | null>(null);
+  const [selectedUiObject, setSelectedUiObject] = useState<ObjectData | null>(null);
+
   const [dragableUiObjects, setDragableUiObjects] = useState<ObjectData[]>([]);
 
   const [isDragging, setIsDragging] = useState<boolean>(false);
@@ -58,18 +68,30 @@ function WhiteboardCanvas() {
   useEffect(() => {
     if (isDragging && mouseDrag) {
       const { dx, dy } = mouseDrag;
-      draggableObjects.forEach((object) => {
-        const newObject = { ...object, top: object.top + dy, left: object.left + dx };
-        renderObjectsRef.current.set(object.id, newObject);
-      });
-      dragableUiObjects.forEach((object) => {
-        const newObject = { ...object, top: object.top + dy, left: object.left + dx };
-        uiObjectsRef.current.set(object.id, newObject);
-      });
+      if (selectedUiObject && selectionBox) {
+        const scaledSelectionBox = dragScaleObject(mouseDrag, selectedUiObject, selectionBox);
+        const updatedAnchors = getSelectionAnchors([scaledSelectionBox]);
+
+        updateAnchorMap(uiObjectsRef.current!, updatedAnchors);
+
+        selectedObjects.forEach((object) => {
+          const newObject = scaleObject(scaledSelectionBox, selectionBox, object);
+          renderObjectsRef.current.set(object.id, newObject);
+        });
+      } else {
+        selectedObjects.forEach((object) => {
+          const newObject = { ...object, top: object.top + dy, left: object.left + dx };
+          renderObjectsRef.current.set(object.id, newObject);
+        });
+        dragableUiObjects.forEach((object) => {
+          const newObject = { ...object, top: object.top + dy, left: object.left + dx };
+          uiObjectsRef.current.set(object.id, newObject);
+        });
+      }
       mainCanvas.current?.render();
       uiCanvas.current?.render();
     }
-  }, [isDragging, mouseDrag, draggableObjects]);
+  }, [isDragging, mouseDrag, selectedObjects, selectedUiObject]);
 
   useEffect(() => {
     if (!!selectionCanvasRef.current) {
@@ -85,14 +107,20 @@ function WhiteboardCanvas() {
           ?.map((id) => renderObjectsRef.current?.get(id))
           .filter((object) => object !== undefined) as ObjectData[];
 
-        setDraggableObjects(selectedObjects);
+        setSelectedObjects(selectedObjects);
 
         const anchors = getSelectionAnchors(selectedObjects);
         updateAnchorMap(uiObjectsRef.current!, anchors);
         setDragableUiObjects(anchors || []);
+        setSelectionBox(anchors?.find((anchor) => anchor.id === AnchorIds.box) || null);
 
         selectionCanvas.current?.render();
         uiCanvas.current?.render();
+      });
+
+      selectionCanvas.current.addEventListener("uiObjectSelect", (id) => {
+        const selectedObject = id ? uiObjectsRef.current?.get(id) : null;
+        setSelectedUiObject(selectedObject || null);
       });
 
       selectionCanvas.current.addEventListener("mouseDrag", (dragData) => {

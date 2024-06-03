@@ -27,6 +27,7 @@ export interface MouseDragData {
 
 interface SelectCanvasEventMap {
   objectsSelect: (ids?: number[]) => void;
+  uiObjectSelect: (id?: number) => void;
   mouseDrag: (e: MouseDragData) => void;
   mouseDragEnd: () => void;
   mouseDragStart: () => void;
@@ -34,6 +35,7 @@ interface SelectCanvasEventMap {
 
 export class SelectionCanvas extends Canvas<SelectCanvasEventMap> {
   private selectedObjectsIds: number[] = [];
+  private selectedAnchorId: number | undefined;
   private colorToId: Map<string, number> = new Map();
 
   private uiObjects: Map<number, ObjectData>;
@@ -105,13 +107,17 @@ export class SelectionCanvas extends Canvas<SelectCanvasEventMap> {
     const clickedUiObject = id !== undefined ? this.uiObjects.get(id) : undefined;
 
     if (clickedUiObject) {
-      this.handleAnchorSelectEvent(e);
+      this.handleAnchorSelectEvent(id);
     } else {
       this.handleObjectSelectEvent(id, e.shiftKey);
     }
   }
 
-  private handleAnchorSelectEvent(e: MouseEvent) {}
+  private handleAnchorSelectEvent(id: number | undefined) {
+    this.selectedAnchorId = id;
+    this.emit("uiObjectSelect", id);
+    this.emit("objectsSelect", this.selectedObjectsIds);
+  }
 
   private handleObjectSelectEvent(id: number | undefined, shiftKey: boolean) {
     if (!id) {
@@ -132,6 +138,7 @@ export class SelectionCanvas extends Canvas<SelectCanvasEventMap> {
         this.selectedObjectsIds = [id!];
       }
     }
+    this.emit("uiObjectSelect", undefined);
     this.emit("objectsSelect", this.selectedObjectsIds);
   }
 }

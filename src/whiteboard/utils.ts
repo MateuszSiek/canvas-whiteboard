@@ -1,3 +1,4 @@
+import { MouseDragData } from "./canvas/SelectionCanvas";
 import { ObjectData, ObjectType } from "./objects/Object";
 
 export function generateColorFromId(id: number): string {
@@ -86,29 +87,85 @@ export function updateAnchorMap(data: Map<number, ObjectData>, anchors?: ObjectD
   }
 }
 
-export function getSelectionAnchors(selectedObjects: ObjectData[]): ObjectData[] | undefined {
-  if (selectedObjects && selectedObjects.length > 0) {
-    const findExtremum = (
-      objects: ObjectData[],
-      comparator: (a: ObjectData, b: ObjectData) => boolean,
-    ) => {
-      return objects.reduce((acc, obj) => (comparator(acc!, obj!) ? acc : obj));
-    };
+export function getSelectionAnchors(objects: ObjectData[]): ObjectData[] | undefined {
+  if (!objects || objects.length === 0) return undefined;
 
-    const minTopObject = findExtremum(selectedObjects, (a, b) => a.top < b.top);
-    const minLeftObject = findExtremum(selectedObjects, (a, b) => a.left < b.left);
-    const maxTopObject = findExtremum(selectedObjects, (a, b) => a.top > b.top);
-    const maxRightObject = findExtremum(
-      selectedObjects,
-      (a, b) => a.left + a.width > b.left + b.width,
-    );
-    const minTop = minTopObject!.top;
-    const minLeft = minLeftObject!.left;
-    const maxWidth = maxRightObject!.left + maxRightObject!.width - minLeft;
-    const maxHeight = maxTopObject!.top + maxTopObject!.height - minTop;
-    const anchors = getAnchorObjects(minTop, minLeft, maxWidth, maxHeight);
-    return anchors;
-  } else {
-    return undefined;
+  let minTop = Number.MAX_VALUE;
+  let minLeft = Number.MAX_VALUE;
+  let maxBottom = Number.MIN_VALUE;
+  let maxRight = Number.MIN_VALUE;
+
+  objects.forEach((obj) => {
+    minTop = Math.min(minTop, obj.top);
+    minLeft = Math.min(minLeft, obj.left);
+    maxBottom = Math.max(maxBottom, obj.top + obj.height);
+    maxRight = Math.max(maxRight, obj.left + obj.width);
+  });
+  return getAnchorObjects(minTop, minLeft, maxRight - minLeft, maxBottom - minTop);
+}
+
+export function scaleObject(
+  wrapperBox: ObjectData,
+  initialBox: ObjectData,
+  object: ObjectData,
+): ObjectData {
+  const scaleX = wrapperBox.width / initialBox.width;
+  const scaleY = wrapperBox.height / initialBox.height;
+
+  const newLeft = wrapperBox.left + (object.left - initialBox.left) * scaleX;
+  const newTop = wrapperBox.top + (object.top - initialBox.top) * scaleY;
+  const newWidth = object.width * scaleX;
+  const newHeight = object.height * scaleY;
+
+  return {
+    ...object,
+    left: newLeft,
+    top: newTop,
+    width: newWidth,
+    height: newHeight,
+  };
+}
+
+export function dragScaleObject(
+  mouseDrag: MouseDragData,
+  anchor: ObjectData,
+  object: ObjectData,
+): ObjectData {
+  const { dx, dy } = mouseDrag;
+  let scaledSelectionBox = object;
+  switch (anchor.id) {
+    case AnchorIds.topLeft:
+      scaledSelectionBox = {
+        ...object,
+        top: object.top + dy,
+        left: object.left + dx,
+        width: object.width - dx,
+        height: object.height - dy,
+      };
+      break;
+    case AnchorIds.topRight:
+      scaledSelectionBox = {
+        ...object,
+        top: object.top + dy,
+        width: object.width + dx,
+        height: object.height - dy,
+      };
+      break;
+    case AnchorIds.bottomRight:
+      scaledSelectionBox = {
+        ...object,
+        width: object.width + dx,
+        height: object.height + dy,
+      };
+      break;
+    case AnchorIds.bottomLeft:
+      scaledSelectionBox = {
+        ...object,
+        left: object.left + dx,
+        width: object.width - dx,
+        height: object.height + dy,
+      };
+      break;
   }
+  return scaledSelectionBox;
 }
