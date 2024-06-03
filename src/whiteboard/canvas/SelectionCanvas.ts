@@ -1,7 +1,6 @@
-import { throttle } from "throttle-debounce";
 import { Canvas, CanvasConstructorParameters } from "./Canvas";
 import { generateColorFromId } from "../utils";
-import { ObjectType, RendererType, render } from "../objects/Object";
+import { ObjectData, RendererType, render } from "../objects/Object";
 
 function getMousePos(canvas: HTMLCanvasElement, evt: MouseEvent) {
   var rect = canvas.getBoundingClientRect(),
@@ -19,31 +18,62 @@ function rgbToHex(r: number, g: number, b: number): string {
   return "#" + ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1);
 }
 
+export interface MouseDragData {
+  x: number;
+  y: number;
+  dx: number;
+  dy: number;
+}
+
 interface SelectCanvasEventMap {
-  objectHover: (id?: number) => void;
   objectsSelect: (ids?: number[]) => void;
+  mouseDrag: (e: MouseDragData) => void;
+  mouseDragEnd: () => void;
+  mouseDragStart: () => void;
 }
 
 export class SelectionCanvas extends Canvas<SelectCanvasEventMap> {
-  private hoveredObjectId: number | undefined;
   private selectedObjectsIds: number[] = [];
   private colorToId: Map<string, number> = new Map();
 
-  constructor({ element, width, height, objects }: CanvasConstructorParameters) {
-    super({
-      element,
-      width,
-      height,
-      objects,
+  private uiObjects: Map<number, ObjectData>;
+
+  private isMouseDown = false;
+  private isDragging = false;
+  private initialMousePos: { x: number; y: number } = { x: 0, y: 0 };
+
+  constructor({
+    uiObjects,
+    ...args
+  }: { uiObjects: Map<number, ObjectData> } & CanvasConstructorParameters) {
+    super(args);
+
+    this.uiObjects = uiObjects;
+    this.canvasElement.addEventListener("mousemove", (e) => {
+      if (this.isMouseDown) {
+        const { x, y } = getMousePos(this.canvasElement, e);
+        const dx = (x - this.initialMousePos.x) / this.dpr;
+        const dy = (y - this.initialMousePos.y) / this.dpr;
+        if (!this.isDragging) {
+          this.isDragging = true;
+          this.emit("mouseDragStart");
+        }
+        this.emit("mouseDrag", { x, y, dx, dy });
+      }
     });
 
-    const mouseMove = throttle(100, (e) => {
-      this.handleMousemove(e);
-    });
-
-    this.canvasElement.addEventListener("mousemove", mouseMove);
     this.canvasElement.addEventListener("mousedown", (e) => {
+      this.isMouseDown = true;
+      this.initialMousePos = getMousePos(this.canvasElement, e);
       this.handleClick(e);
+    });
+
+    this.canvasElement.addEventListener("mouseup", () => {
+      if (this.isDragging) {
+        this.isDragging = false;
+        this.emit("mouseDragEnd");
+      }
+      this.isMouseDown = false;
     });
   }
 
@@ -51,14 +81,16 @@ export class SelectionCanvas extends Canvas<SelectCanvasEventMap> {
     this.eventListeners.clear();
     this.canvasElement.removeEventListener("mousemove", () => {});
     this.canvasElement.removeEventListener("mousedown", () => {});
+    this.canvasElement.removeEventListener("mouseup", () => {});
   }
 
   public render() {
     const ctx = this.ctx;
     this.clear();
     const objects = Array.from(this.data.values());
+    const uiObjects = Array.from(this.uiObjects.values());
     this.colorToId = new Map();
-    for (const object of objects) {
+    for (const object of [...objects, ...uiObjects]) {
       const color = generateColorFromId(object.id);
       this.colorToId.set(color, object.id);
       render({ ...object, color }, ctx, RendererType.selectable);
@@ -66,51 +98,40 @@ export class SelectionCanvas extends Canvas<SelectCanvasEventMap> {
   }
 
   private handleClick(e: MouseEvent) {
-    const clickedObject =
-      this.hoveredObjectId !== undefined ? this.data.get(this.hoveredObjectId) : undefined;
-    if (clickedObject?.type === ObjectType.resizeAnchor) {
+    const { x, y } = getMousePos(this.canvasElement, e);
+    const p = this.ctx.getImageData(x, y, 1, 1).data;
+    const color = rgbToHex(p[0], p[1], p[2]);
+    const id = this.colorToId?.get(color);
+    const clickedUiObject = id !== undefined ? this.uiObjects.get(id) : undefined;
+
+    if (clickedUiObject) {
       this.handleAnchorSelectEvent(e);
     } else {
-      this.handleObjectSelectEvent(e);
+      this.handleObjectSelectEvent(id, e.shiftKey);
     }
   }
 
   private handleAnchorSelectEvent(e: MouseEvent) {}
 
-  private handleObjectSelectEvent(e: MouseEvent) {
-    if (!this.hoveredObjectId) {
+  private handleObjectSelectEvent(id: number | undefined, shiftKey: boolean) {
+    if (!id) {
       // no object was clicked
       this.selectedObjectsIds = [];
-    } else if (e.shiftKey) {
-      if (this.selectedObjectsIds.includes(this.hoveredObjectId)) {
+    } else if (shiftKey) {
+      if (this.selectedObjectsIds.includes(id)) {
         // shift key + click on already selected object: remove it from selection
-        this.selectedObjectsIds = this.selectedObjectsIds.filter(
-          (id) => id !== this.hoveredObjectId,
-        );
+        this.selectedObjectsIds = this.selectedObjectsIds.filter((i) => i !== id);
       } else {
         // shift key + click on object: add it to selection
-        const uniqueIds = new Set<number>([...this.selectedObjectsIds, this.hoveredObjectId!]);
+        const uniqueIds = new Set<number>([...this.selectedObjectsIds, id]);
         this.selectedObjectsIds = Array.from(uniqueIds);
       }
     } else {
-      // click on already selected object: do nothing
-      if (this.selectedObjectsIds.includes(this.hoveredObjectId)) {
-        return;
-      }
       // click on object: select it
-      this.selectedObjectsIds = [this.hoveredObjectId!];
+      if (!this.selectedObjectsIds.includes(id)) {
+        this.selectedObjectsIds = [id!];
+      }
     }
     this.emit("objectsSelect", this.selectedObjectsIds);
-  }
-
-  private handleMousemove(e: MouseEvent) {
-    const { x, y } = getMousePos(this.canvasElement, e);
-    const p = this.ctx.getImageData(x, y, 1, 1).data;
-    const color = rgbToHex(p[0], p[1], p[2]);
-    const id = this.colorToId?.get(color);
-    if (this.hoveredObjectId !== id) {
-      this.emit("objectHover", id);
-    }
-    this.hoveredObjectId = id;
   }
 }

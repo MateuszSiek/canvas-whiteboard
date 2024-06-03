@@ -12,7 +12,7 @@ export const initializeCanvasObjects = (objects: ObjectData[]): Map<number, Obje
   }, new Map<number, ObjectData>());
 };
 
-enum AnchorIds {
+export enum AnchorIds {
   topLeft = 10000,
   topRight = 10001,
   bottomRight = 10002,

@@ -1,4 +1,4 @@
-import { ObjectData, render, renderer } from "../objects/Object";
+import { ObjectData, render } from "../objects/Object";
 
 export interface CanvasDefinition<T> {
   clear(): void;
