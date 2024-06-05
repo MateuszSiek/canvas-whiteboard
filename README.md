@@ -1,5 +1,11 @@
 # Canvas whiteboard
 
+
+https://github.com/MateuszSiek/canvas-whiteboard/assets/16710005/963b3c9c-72b0-4a01-9955-a81dc82ec1e9
+
+
+
+
 ## Table of Contents
 
 1. [Introduction](#introduction)
@@ -30,7 +36,9 @@ Users can experience the application in two modes:
 1. **Canvas view**: All layers overlapped as they would appear in practice.
 2. **Debug view**: All layers displayed side by side for better understanding of the concept.
 
-<!-- add video -->
+
+https://github.com/MateuszSiek/canvas-whiteboard/assets/16710005/8f1ab0d2-bcbc-488c-813d-e7f15f77246b
+
 
 ## Features
 
@@ -83,15 +91,14 @@ The layered approach uses the following canvases:
 - **UI Layer**: Renders UI elements such as selection boxes and resize anchors.
 - **User Interaction Layer**: An invisible layer used for handling interactions like object selection.
 
+![CleanShot 2024-06-05 at 11 17 43@2x](https://github.com/MateuszSiek/canvas-whiteboard/assets/16710005/ef21920f-c284-4a88-b507-31f45123e917)
+
+
 ### Object Rendering
 
 Shapes are rendered using customizable renderers defined for each shape. Each shape has `renderDefault` and `renderSelect` methods.
 `renderDefault` controlls the rendering of objects visible to the user, `renderSelect` method controlls the way we render selection bounding boxes(shapes). This way we can decouple rendering from selection.
 This could be usefull for example in a scenario when the shapes is very small(1x1 px), which would be very hard to select with a click. We can render a selection box that is a bit larger.
-
-### Object Selection
-
-The selection method renders objects on the **User Interaction Layer** with unique colors. When the user clicks on an object, the pixel color under the mouse cursor is read and mapped to an object ID using a pre-stored mapping. This allows for efficient and precise object selection without affecting the main canvas rendering.
 
 ### Object Selection
 
