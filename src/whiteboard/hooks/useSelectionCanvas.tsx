@@ -2,14 +2,15 @@ import { useEffect, useRef, useState } from "react";
 import { MainCanvas } from "../canvas/MainCanvas";
 import { SelectionCanvas, SelectionEventType } from "../canvas/SelectionCanvas";
 import {
-  AnchorIds,
-  dragScaleObject,
-  getSelectionAnchors,
+  SelectionObjectIds,
+  mouseScaleObject,
+  getSelectionObjects,
   scaleObject,
-  updateAnchorMap,
-} from "../utils/anchors";
+  updateSelectionObjectsMap,
+} from "../utils/selection";
 import { ObjectData } from "../types/objects";
 import { MouseDiffPosition } from "../types/mouse";
+import { updateRefObjects } from "../utils/objects";
 
 interface SelectionCanvasHook {
   renderObjectsRef: React.MutableRefObject<Map<number, ObjectData>>;
@@ -32,34 +33,42 @@ export function useSelectionCanvas({
   const selectionCanvasRef = useRef<HTMLCanvasElement>(null);
   const selectionCanvas = useRef<SelectionCanvas>();
 
+  // list of objects selected by the user when dragging or resizing
+  // those are used to calculate the delta position and scale
   const [selectedObjects, setSelectedObjects] = useState<ObjectData[]>([]);
-  const [selectionBox, setSelectionBox] = useState<ObjectData | null>(null);
-  const [selectedAnchor, setSelectedAnchor] = useState<ObjectData | null>(null);
 
+  // list of UI objects that are used to drag and resize the selectedObjects
   const [dragableUiObjects, setDragableUiObjects] = useState<ObjectData[]>([]);
 
+  // we store selected anchor to know which anchor is being dragged and how to resize the objects
+  const [selectedAnchor, setSelectedAnchor] = useState<ObjectData>();
+
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [mouseDragPos, setMouseDragPos] = useState<MouseDiffPosition | null>(null);
+  const [mouseDragPos, setMouseDragPos] = useState<MouseDiffPosition>();
 
   const handleObjectsSelect = (ids?: number[]) => {
-    const selectedObjects: ObjectData[] = ids
-      ?.map((id) => renderObjectsRef.current?.get(id))
-      .filter((object) => object !== undefined) as ObjectData[];
+    // map ids to objects
+    const selectedObjects: ObjectData[] =
+      ids
+        ?.map((id) => renderObjectsRef.current?.get(id))
+        .filter((object): object is ObjectData => object !== undefined) || [];
 
     setSelectedObjects(selectedObjects);
 
-    const anchors = getSelectionAnchors(selectedObjects);
-    updateAnchorMap(uiObjectsRef.current!, anchors);
-    setDragableUiObjects(anchors || []);
-    setSelectionBox(anchors?.find((anchor) => anchor.id === AnchorIds.box) || null);
+    // get selection objects(anchor points and bounding box) for selected objects
+    const selectionObjects = getSelectionObjects(selectedObjects);
+    updateSelectionObjectsMap(uiObjectsRef.current!, selectionObjects);
+    setDragableUiObjects(selectionObjects || []);
 
+    // after selection is updated we need to render the main canvas to show selection
+    // and ui canvas to make the selectionObjects selectable
     selectionCanvas.current?.render();
     uiCanvas.current?.render();
   };
 
   const handleAnchorSelect = (id?: number) => {
-    const selectedObject = id ? uiObjectsRef.current?.get(id) : null;
-    setSelectedAnchor(selectedObject || null);
+    const selectedObject = id ? uiObjectsRef.current?.get(id) : undefined;
+    setSelectedAnchor(selectedObject);
   };
 
   const handleMouseDrag = (dragData: MouseDiffPosition) => {
@@ -68,6 +77,8 @@ export function useSelectionCanvas({
 
   const handleMouseDragEnd = () => {
     setIsDragging(false);
+    // once dragging is done we need to update the position of the selected objects
+    // there is no need to update position while dragging since you can't both drag and select new objects
     selectionCanvas.current?.render();
   };
 
@@ -76,6 +87,7 @@ export function useSelectionCanvas({
   };
 
   useEffect(() => {
+    // initialize selection canvas
     if (!!selectionCanvasRef.current) {
       selectionCanvas.current = new SelectionCanvas({
         objects: renderObjectsRef.current,
@@ -106,39 +118,41 @@ export function useSelectionCanvas({
   }, [selectionCanvasRef]);
 
   useEffect(() => {
+    // handle dragging and resizing of selected objects
+
     if (!isDragging || !mouseDragPos) return;
 
     const { dx, dy } = mouseDragPos;
-    const updateRefObjects = (
-      ref: React.MutableRefObject<Map<number, ObjectData>>,
-      objects: ObjectData[],
-      updateFunc: (object: ObjectData) => ObjectData,
-    ) => {
-      objects.forEach((object) => {
-        const newObject = updateFunc(object);
-        ref.current.set(newObject.id, newObject);
-      });
-    };
 
+    const selectionBox = dragableUiObjects?.find((anchor) => anchor.id === SelectionObjectIds.box);
+
+    // if anchor is selected that means we are resizing the objects
     if (selectedAnchor && selectionBox) {
-      const scaledSelectionBox = dragScaleObject(mouseDragPos, selectedAnchor, selectionBox);
-      const updatedAnchors = getSelectionAnchors([scaledSelectionBox]);
+      // first scale the selection box
+      const scaledSelectionBox = mouseScaleObject(mouseDragPos, selectedAnchor, selectionBox);
+      // generate new selection anchors based on the scaled selection box
+      const updatedAnchors = getSelectionObjects([scaledSelectionBox]);
 
-      updateAnchorMap(uiObjectsRef.current!, updatedAnchors);
+      //  update uiObjects with new anchors and selection box
+      updateSelectionObjectsMap(uiObjectsRef.current!, updatedAnchors);
 
+      // scale all selected objects based on the scaled selection box
       updateRefObjects(renderObjectsRef, selectedObjects, (object) =>
         scaleObject(scaledSelectionBox, selectionBox, object),
       );
     } else {
+      // if no anchor is selected that means we are dragging the objects
       const translateObject = (object: ObjectData) => ({
         ...object,
         top: object.top + dy,
         left: object.left + dx,
       });
+      // we need to update both renderObjects and uiObjects so that we can render live changes to main and ui canvas
       updateRefObjects(renderObjectsRef, selectedObjects, translateObject);
-
       updateRefObjects(uiObjectsRef, dragableUiObjects, translateObject);
     }
+    // render main and ui canvas to show the changes
+    // there is no need to render selection canvas
     mainCanvas.current?.render();
     uiCanvas.current?.render();
   }, [isDragging, mouseDragPos, selectedObjects, selectedAnchor]);

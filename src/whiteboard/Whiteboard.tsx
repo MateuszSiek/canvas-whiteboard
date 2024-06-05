@@ -1,15 +1,17 @@
 import "./Whiteboard.css";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useMainCanvas } from "./hooks/useMainCanvas";
 import { useUiCanvas } from "./hooks/useUiCanvas";
 import { useSelectionCanvas } from "./hooks/useSelectionCanvas";
-import { ObjectData, ObjectType } from "./types/objects";
-import { initializeCanvasObjects } from "./utils/objects";
+import { ObjectData } from "./types/objects";
+import { createRandomRectangle, initializeCanvasObjects } from "./utils/objects";
 
 export default function Whiteboard() {
   const renderObjectsRef = useRef<Map<number, ObjectData>>(initializeCanvasObjects());
   const uiObjectsRef = useRef<Map<number, ObjectData>>(new Map());
   const queryParams = new URLSearchParams(window.location.search);
+  // in debug view we show 3 canvases side by side to showcase
+  // various layers that compose the whiteboard
   const debugView = Boolean(queryParams.get("debug"));
 
   const canvasSize = {
@@ -30,19 +32,10 @@ export default function Whiteboard() {
   const addRectangle = () => {
     const existingIds = Array.from(renderObjectsRef.current.keys());
     const id = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1;
-    const width = 100 + Math.random() * 100;
-    const height = 100 + Math.random() * 100;
-    const left = canvasSize.width / 2 - width / 2 + Math.random() * 200 - 200;
-    const top = canvasSize.height / 2 - height / 2 + Math.random() * 200 - 200;
-    const color = `#${Math.floor(Math.random() * 16777215).toString(16)}`;
+    const object = createRandomRectangle(canvasSize);
     renderObjectsRef.current.set(id, {
+      ...object,
       id,
-      type: ObjectType.rectangle,
-      left,
-      top,
-      width,
-      height,
-      color,
     });
     mainCanvas.current?.render();
     selectCanvas.current?.render();
@@ -52,11 +45,19 @@ export default function Whiteboard() {
     window.location.search = debugView ? "" : "debug=true";
   };
 
+  useEffect(() => {
+    console.log(renderObjectsRef);
+  }, []);
   return (
     <>
       <div className={`canvases-wrapper ${debugView && "debug-view"}`}>
+        {/* MAIN CANVAS- responsible for rendering shapes the way user sees them */}
         <canvas className="main-canvas" ref={mainCanvasRef} />
+
+        {/* UI CANVAS- responsible for UI elements visible to user eg selection boxes */}
         <canvas className="ui-canvas" ref={uiCanvasRef} />
+
+        {/* SELECTION CANVAS- responsible for user interactions, all events are captured on this layer */}
         <canvas className="selection-canvas" ref={selectionCanvasRef} />
       </div>
       <div className="controll-ui">

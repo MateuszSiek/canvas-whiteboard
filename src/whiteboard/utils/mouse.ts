@@ -1,9 +1,10 @@
 import { MouseDiffPosition, MousePosition } from "../types/mouse";
 
+// get mouse position within canvas
 export function getMousePos(canvas: HTMLCanvasElement, evt: MouseEvent): MousePosition {
-  var rect = canvas.getBoundingClientRect(),
-    scaleX = canvas.width / rect.width,
-    scaleY = canvas.height / rect.height;
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
 
   return {
     x: (evt.clientX - rect.left) * scaleX,
@@ -11,6 +12,7 @@ export function getMousePos(canvas: HTMLCanvasElement, evt: MouseEvent): MousePo
   };
 }
 
+// get mouse position with delta based on `initialMousePos`
 export function getDiffMousePos(
   canvas: HTMLCanvasElement,
   evt: MouseEvent,

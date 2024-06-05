@@ -3,7 +3,6 @@ import { ObjectData } from "../types/objects";
 
 export interface CanvasDefinition<T> {
   clear(): void;
-  setObjects(objects: Map<number, ObjectData>): void;
   render(): void;
   addEventListener<E extends EventName<T>>(event: E, callback: EventCallback<T, E>): void;
   removeEventListener<E extends EventName<T>>(event: E, callback: EventCallback<T, E>): void;
@@ -20,10 +19,11 @@ export interface CanvasConstructorParameters {
 type EventName<T> = keyof T;
 type EventCallback<T, E extends EventName<T>> = T[E] extends (...args: any) => any ? T[E] : never;
 
+// Canvas class that handles canvas rendering and event handling
 export class Canvas<T = {}> implements CanvasDefinition<T> {
   protected canvasElement: HTMLCanvasElement;
-  protected data: Map<number, ObjectData>;
-  protected dpr: number;
+  protected data: Map<number, ObjectData>; // Objects to render
+  protected dpr: number; // Device pixel ratio
   protected ctx: CanvasRenderingContext2D;
 
   protected eventListeners: Map<EventName<T>, Array<EventCallback<T, any>>> = new Map();
@@ -53,10 +53,6 @@ export class Canvas<T = {}> implements CanvasDefinition<T> {
     ctx.resetTransform();
     ctx.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
     ctx.restore();
-  }
-
-  public setObjects(data: Map<number, ObjectData>): void {
-    this.data = data;
   }
 
   public render() {

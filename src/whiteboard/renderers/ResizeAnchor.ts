@@ -1,11 +1,12 @@
 import { ObjectData } from "../types/objects";
-import { ShapeRenderer } from "../types/render";
+import { ObjectRenderer } from "../types/render";
+import { SELECTION_COLOR } from "../utils/consts";
 
-export const ResizeAnchor: ShapeRenderer = {
+export const ResizeAnchor: ObjectRenderer = {
   renderDefault(object: ObjectData, ctx: CanvasRenderingContext2D): void {
     ctx.save();
     ctx.fillStyle = "white";
-    ctx.strokeStyle = "blue";
+    ctx.strokeStyle = SELECTION_COLOR;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.rect(object.left, object.top, object.width, object.height);
@@ -16,8 +17,8 @@ export const ResizeAnchor: ShapeRenderer = {
 
   renderSelect(object: ObjectData, ctx: CanvasRenderingContext2D): void {
     ctx.save();
-    ctx.fillStyle = object.color || "blue";
-    ctx.strokeStyle = object.color || "blue";
+    ctx.fillStyle = object.color || "";
+    ctx.strokeStyle = object.color || "";
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.rect(object.left, object.top, object.width, object.height);

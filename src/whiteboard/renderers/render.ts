@@ -1,10 +1,10 @@
 import { ObjectData, ObjectType } from "../types/objects";
-import { RendererType, ShapeRenderer } from "../types/render";
+import { RendererType, ObjectRenderer } from "../types/render";
 import { Rectangle } from "./Rectangle";
 import { ResizeAnchor } from "./ResizeAnchor";
 import { ResizeAnchorBox } from "./ResizeAnchorBox";
 
-const objectRenderers: { [key in ObjectType]: ShapeRenderer } = {
+const objectRenderers: { [key in ObjectType]: ObjectRenderer } = {
   [ObjectType.rectangle]: Rectangle,
   [ObjectType.resizeAnchor]: ResizeAnchor,
   [ObjectType.resizeAnchorBox]: ResizeAnchorBox,

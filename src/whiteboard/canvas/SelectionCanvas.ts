@@ -22,14 +22,21 @@ interface SelectCanvasEventMap {
   [SelectionEventType.mouseDragStart]: () => void;
 }
 
+// Instance of a canvas that allows selecting objects
+// The selection works by rendering objects with a unique color and then checking which color was clicked
 export class SelectionCanvas extends Canvas<SelectCanvasEventMap> {
   private selectedObjectsIds: number[] = [];
+
+  // each object is rendered with a unique color that maps to its id
   private colorToId: Map<string, number> = new Map();
 
+  // UI objects are rendered on top of the main objects and are used for interaction
+  // we need to keep track of them separately
   private uiObjects: Map<number, ObjectData>;
 
   private isMouseDown = false;
   private isDragging = false;
+  // used to calculate the delta position when dragging
   private initialMousePos: MousePosition = { x: 0, y: 0 };
 
   constructor({
@@ -48,6 +55,8 @@ export class SelectionCanvas extends Canvas<SelectCanvasEventMap> {
     const objects = [...this.data.values(), ...this.uiObjects.values()];
     this.colorToId.clear();
     objects.forEach((object) => {
+      // each object is rendered with a unique color that maps to its id
+      // this way we can check which object was clicked/hovered
       const color = generateColorFromId(object.id);
       this.colorToId.set(color, object.id);
       render({ ...object, color }, ctx, RendererType.selectable);
@@ -83,10 +92,13 @@ export class SelectionCanvas extends Canvas<SelectCanvasEventMap> {
 
     this.initialMousePos = getMousePos(this.canvasElement, e);
 
+    // get color of the clicked pixel, based on that we can determine which object was clicked
     const color = getCanvasPixelColor(this.ctx, this.initialMousePos);
     const id = this.colorToId?.get(color);
     const clickedUiObject = id !== undefined ? this.uiObjects.get(id) : undefined;
 
+    // we need to handle the click differently based on whether a UI object or a main object was clicked
+    // this way we can notify the user on which object is selected and let them properly handle the action
     if (clickedUiObject) {
       this.handleAnchorSelectEvent(id);
     } else {
@@ -100,6 +112,7 @@ export class SelectionCanvas extends Canvas<SelectCanvasEventMap> {
   }
 
   private handleObjectSelectEvent(id: number | undefined, shiftKey: boolean) {
+    // handle multi object selection
     if (!id) {
       // no object was clicked
       this.selectedObjectsIds = [];

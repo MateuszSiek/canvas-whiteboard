@@ -1,10 +1,11 @@
 import { ObjectData } from "../types/objects";
-import { ShapeRenderer } from "../types/render";
+import { ObjectRenderer } from "../types/render";
+import { SELECTION_COLOR } from "../utils/consts";
 
-export const ResizeAnchorBox: ShapeRenderer = {
+export const ResizeAnchorBox: ObjectRenderer = {
   renderDefault(object: ObjectData, ctx: CanvasRenderingContext2D): void {
     ctx.save();
-    ctx.strokeStyle = "#1395ff";
+    ctx.strokeStyle = SELECTION_COLOR;
     ctx.lineWidth = 1;
 
     ctx.beginPath();
