@@ -1,10 +1,6 @@
 # Canvas whiteboard
 
-
 https://github.com/MateuszSiek/canvas-whiteboard/assets/16710005/963b3c9c-72b0-4a01-9955-a81dc82ec1e9
-
-
-
 
 ## Table of Contents
 
@@ -36,9 +32,7 @@ Users can experience the application in two modes:
 1. **Canvas view**: All layers overlapped as they would appear in practice.
 2. **Debug view**: All layers displayed side by side for better understanding of the concept.
 
-
 https://github.com/MateuszSiek/canvas-whiteboard/assets/16710005/8f1ab0d2-bcbc-488c-813d-e7f15f77246b
-
 
 ## Features
 
@@ -71,17 +65,11 @@ https://github.com/MateuszSiek/canvas-whiteboard/assets/16710005/8f1ab0d2-bcbc-4
 
 ### Structure
 
-The app leverages a custom canvas abstraction for better control over canvas interactions and rendering. This abstraction supports features like custom event emission and proper initialization, considering the device pixel ratio.
-
 ### Custom Canvas Objects
 
-A base `Canvas` class enables controlled interactions and rendering:
+The app leverages a [custom canvas abstraction](https://github.com/MateuszSiek/canvas-whiteboard/blob/main/src/whiteboard/canvas/Canvas.ts) for better control over canvas interactions and rendering. This abstraction supports features like custom event emission and proper initialization, considering the device pixel ratio.
 
-- **Initialization**: Setting up the context and proper rendering canvas scaling
-- **Event Handling**: Ability to add custom events
-- **Rendering**: Base method to render objects on canvas.
-
-Derived canvases extend this base class to create specialized canvases, such as the selection canvas, which implements features like color mapping for object selection.
+Derived canvases extend this base class to create specialized canvases, such as the [selection canvas](https://github.com/MateuszSiek/canvas-whiteboard/blob/main/src/whiteboard/canvas/SelectionCanvas.ts), which implements features like color mapping for object selection and custom events.
 
 ### Layered Canvas Approach
 
@@ -93,18 +81,17 @@ The layered approach uses the following canvases:
 
 ![CleanShot 2024-06-05 at 11 17 43@2x](https://github.com/MateuszSiek/canvas-whiteboard/assets/16710005/ef21920f-c284-4a88-b507-31f45123e917)
 
-
 ### Object Rendering
 
-Shapes are rendered using customizable renderers defined for each shape. Each shape has `renderDefault` and `renderSelect` methods.
+Shapes are rendered using customizable renderers defined for each shape. Each shape has [renderDefault and renderSelect](https://github.com/MateuszSiek/canvas-whiteboard/blob/main/src/whiteboard/types/render.ts#L8-L12) methods.
 `renderDefault` controlls the rendering of objects visible to the user, `renderSelect` method controlls the way we render selection bounding boxes(shapes). This way we can decouple rendering from selection.
 This could be usefull for example in a scenario when the shapes is very small(1x1 px), which would be very hard to select with a click. We can render a selection box that is a bit larger.
 
 ### Object Selection
 
-The selection is implemented using cusom `SelectionCanvas` which renders objects on the **User Interaction Layer** with each shape having an unique that is maped to an ID. When the user clicks on an object, the pixel color under the mouse cursor is read and can be easilly mapped to an object ID using a pre-stored mapping. This allows for efficient and precise object selection without affecting the main canvas rendering.
+The selection is implemented using cusom [SelectionCanvas](https://github.com/MateuszSiek/canvas-whiteboard/blob/main/src/whiteboard/canvas/SelectionCanvas.ts) which renders objects on the **User Interaction Layer** with each shape having an unique that is maped to an ID. When the user clicks on an object, the pixel color under the mouse cursor is read and can be easilly mapped to an object ID using a pre-stored mapping. This allows for efficient and precise object selection without affecting the main canvas rendering.
 
-To manage and control the selection, resizing, and movement of objects, the custom `useSelectionCanvas` hook is utilized:
+To manage and control the selection, resizing, and movement of objects, the custom [useSelectionCanvas](https://github.com/MateuszSiek/canvas-whiteboard/blob/main/src/whiteboard/hooks/useSelectionCanvas.tsx) hook is utilized:
 
 - **useSelectionCanvas**: Initializes the `SelectionCanvas` and adds event listeners for selection, resizing, and dragging. It manages the state for selected objects, draggable UI objects, selected anchors, and dragging status. The hook handles object selection by mapping clicked pixels to object IDs, updates the selection state, and facilitates object manipulation, including resizing and moving.
 
